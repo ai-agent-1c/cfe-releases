@@ -1,2 +1,80 @@
 # cfe-releases
-Public binary .cfe releases of AI Agent for 1C BSL extensions (base versions with empty credentials)
+
+Публичные бинарные `.cfe` артефакты BSL-расширений **AI Agent for 1C** — без
+прошитых credentials. Используются клиентами для установки расширений в свои
+конфигурации 1С (БП 3.0, УТ 11, и т.п.).
+
+Релизы публикуются автоматически из приватного репо
+[ai-agent-1c/bsl-extensions](https://github.com/ai-agent-1c/bsl-extensions)
+через GitHub Actions при тэгировании.
+
+## Состав релиза
+
+Каждый GitHub Release несёт три ассета:
+
+| Файл | Назначение |
+|---|---|
+| `ai_MCPАдаптер.cfe` | MCP-адаптер: HTTPService `mcp` + REST API. Базовый тариф. |
+| `ai_ПанельЗадачАгента.cfe` | UI панели задач + хранилище задач/событий. Премиум тариф. Требует установленный `ai_MCPАдаптер`. |
+| `manifest.json` | sha256-хэши, git-sha исходного коммита, версия совместимости платформы. |
+
+`manifest.json` пример:
+
+```json
+{
+  "version": "0.1.0",
+  "git_sha": "521cb342...",
+  "git_tag": "v0.1.0",
+  "build_timestamp": "2026-04-26T12:00:00Z",
+  "platform_compatibility": "8.3.24",
+  "artifacts": [
+    {
+      "filename": "ai_MCPАдаптер.cfe",
+      "extension_name": "ai_MCPАдаптер",
+      "size_bytes": 32108,
+      "sha256": "54f936f1..."
+    },
+    {
+      "filename": "ai_ПанельЗадачАгента.cfe",
+      "extension_name": "ai_ПанельЗадачАгента",
+      "size_bytes": 149421,
+      "sha256": "a951c5b3..."
+    }
+  ]
+}
+```
+
+## Установка
+
+1. В Конфигураторе: **Конфигурация → Расширения конфигурации → Добавить из файла**.
+2. Сначала `ai_MCPАдаптер.cfe`, затем (опционально) `ai_ПанельЗадачАгента.cfe`.
+3. Обновить конфигурацию БД (F7).
+
+Если нужны credentials под конкретную базу (URL воркера, JWT, имя базы) —
+кастомный `.cfe` выдаётся клиентским порталом, базовый артефакт отсюда
+устанавливается с пустыми значениями (заполняются вручную в регистре
+«Настройки агента» при первом открытии формы).
+
+## Версионирование
+
+Тэги вида `vX.Y.Z` (semver) в `bsl-extensions`:
+- **major** — несовместимое изменение MCP-протокола между панелью и адаптером.
+- **minor** — новые объекты/функции, обратная совместимость сохранена.
+- **patch** — фиксы без изменения метаданных.
+
+`platform_compatibility` в manifest — минимальная версия платформы 1С,
+с которой собран артефакт. Сейчас 8.3.24.
+
+## Воспроизводимость
+
+`git_sha` в `manifest.json` указывает на коммит в `bsl-extensions`, из которого
+собран релиз. Воспроизвести локально:
+
+```bash
+git clone https://github.com/ai-agent-1c/bsl-extensions
+cd bsl-extensions
+git checkout <git_sha>
+pip install v8unpack==1.2.6
+make cfe
+sha256sum build/*.cfe   # должны совпасть с sha256 в manifest.json
+```
